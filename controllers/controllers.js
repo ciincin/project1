@@ -4,8 +4,14 @@ const dotenv = require("dotenv"); // for enviroment variables
 dotenv.config(); // Load environment variables from .env file
 
 // Define schema for user validation using Joi
-const userSchema = Joi.object({
+const userSchemaCreateUser = Joi.object({
   name: Joi.string().alphanum().required(),
+  email: Joi.string().email().required(),
+  password: Joi.string().min(6).required(),
+  image: Joi.string().uri().optional(),
+});
+
+const userSchemaUpdateUser = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().min(6).required(),
   image: Joi.string().uri().optional(),
@@ -18,7 +24,7 @@ const controllers = {
   getUsers: async (req, res) => {
     try {
       const userList = await db.many(`SELECT * FROM users ORDER BY id`); // Fetch all users
-      res.status(200).json({ userList, msg: "success!" });
+      res.status(200).json(userList);
     } catch (error) {
       res
         .status(500)
@@ -35,7 +41,12 @@ const controllers = {
         Number(id)
       );
 
-      res.status(200).json({ requestedUser, msg: "success!" });
+      if(!requestedUser){
+        res.status(404).json({msg: "User not found"})
+        return
+      }
+
+      res.status(200).json(requestedUser);
     } catch (error) {
       res
         .status(500)
@@ -46,7 +57,7 @@ const controllers = {
     const { name, email, password, image } = req.body;
 
     //validate user input
-    const validation = userSchema.validate({ name, email, password, image });
+    const validation = userSchemaCreateUser.validate({ name, email, password, image });
 
     if (validation.error) {
       res.status(400).json(validation.error.details[0].message);
@@ -67,6 +78,19 @@ const controllers = {
         .status(500)
         .json({ msg: "Error creating user", error: error.message });
     }
+  },
+  deleteUser: async (req, res)=>{
+    const {id} = req.params
+    try {
+      await db.none(`DELETE FROM users WHERE id=$1`, Number(id))
+
+    const userList = await db.many(`SELECT * FROM users ORDER BY id`)
+
+    res.status(200).json({userList, msg:"user deleted successfully"})
+    } catch (error) {
+      res.status(500).json({msg:"Error deleting user", error:error.message})
+    }
+
   },
   addUserImage: async (req, res) => {
     const { id } = req.params;
@@ -92,6 +116,29 @@ const controllers = {
         .status(500)
         .json({ msg: "Error updating user image", error: error.message });
     }
+  },
+  updateUser:async(req, res)=>{
+    const {id}= req.params
+    const {email, password}= req.body
+
+    const validation = userSchemaUpdateUser.validate({email, password})
+
+    if(validation.error){
+      res.status(400).json(validation.error.details[0].message)
+      return
+    }
+
+    try {
+      await db.none(`UPDATE users SET email =$2, password =$3 WHERE id=$1;`, [Number(id), email, password])
+
+    const userList = await db.many(`SELECT * FROM users ORDER BY id`)
+    res.status(200).json({userList, msg:"Success!"})
+
+    } catch (error) {
+      res.status(400).json({msg:"Error updating user", error: error.message})
+    }
+
+
   },
   error:async(req, res)=>{
     throw new Error ("Async error")
