@@ -1,9 +1,31 @@
-const express = require("express")
-const router = express.Router()
-const controllers = require("../controllers/controllers")
+const express = require('express');
+const router = express.Router();
+const multer = require('multer');
+const controllers = require('../controllers/controllers');
 
-router.get("/", controllers.home)
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'assets/');
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + '.jpg');
+  },
+});
 
+const upload = multer({ storage });
 
+router.get('/', controllers.home);
 
-module.exports = router
+router.get('/users', controllers.getUsers);
+router.get('/users/:id', controllers.getUserById);
+router.post('/users', controllers.createUser);
+router.post(
+  '/users/:id/image',
+  upload.single('user-image'),
+  controllers.addUserImage
+);
+
+router.get("/error", controllers.error)
+
+module.exports = router;
