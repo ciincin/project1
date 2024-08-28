@@ -4,6 +4,7 @@ const morgan = require('morgan'); // middleware for logging HTTP request
 require('express-async-errors'); // automatically handle errors in async functions
 const cors = require('cors'); // middleware to enable Cross-Origing Resource Sharing
 
+
 dotenv.config(); // Loads enviroment variables from .env file
 const app = express();
 const port = process.env.PORT; // Gets the port from .env file
