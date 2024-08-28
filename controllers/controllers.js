@@ -186,44 +186,65 @@ const controllers = {
     const { email, password } = req.body; // Get email and password from request body
 
     try {
+      console.log("Starting login process...");
       const user = await db.oneOrNone(
         `SELECT * FROM users WHERE email = $1`,
-        email
+        [email]
       ); // Fetch the user by email
 
+      console.log("User fetched from DB:", user);
       if (user) {
         //Compare the password provided with the hashed password stored in db
         const match = await bcrypt.compare(password, user.password);
 
+        console.log("Password match result:", match);
         if (match) {
           // If user is found and password matches
           const payload = {
             id: user.id,
-            email,
+            email: user.email,
+            username: user.username,
+            firstname: user.firstname,
+            lastname: user.lastname,
+            image: user.image,
           }; // Create a payload for the JWT
 
+          console.log("UNO")
           const SECRET = process.env.SECRET; // Get the secret key from environment variables
-
+          console.log("DOS")
           const token = jwt.sign(payload, SECRET); // Sign the JWT with the payload and secret
-
+          console.log("TRES")
           console.log(token); // Log the token (for debugging)
+          console.log("CUATRO")
+
+          const query = "UPDATE users SET token="+token+" WHERE id="+user.id;
+          console.log(query)
 
           await db.none(`UPDATE users SET token=$2 WHERE id=$1`, [
             user.id,
             token,
           ]); // Update the user's token in the database
+          console.log("CINCO");
 
-          res.status(200).json({ id: user.id, email, token }); // Respond with the user ID, email, and token
+          res.status(200).json({
+            id: user.id,
+            email: user.email,
+            username: user.username,
+            firstname: user.firstname,
+            lastname: user.lastname,
+            image: user.image,
+            token,
+          }); // Respond with the user ID, email, and token
+          console.log("SEIS");
+
         } else {
-          res
-            .status(400)
-            .json({ msg: "Username or password incorrect. nuevoooooo" }); // If authentication fails, respond with a 400 error
+          res.status(400).json({ msg: "Username or password incorrect." }); // If authentication fails, respond with a 400 error
         }
       } else {
         res.status(400).json({ msg: "Username or password incorrect." }); // If authentication fails, respond with a 400 error
       }
     } catch (error) {
-      res.status(400).json({ msg: "Error log in user", error: error.message }); // Handle errors with a 400 status
+      res.status(400).json({ msg: "Error log in user oooooooooo", error: error.message }); // Handle errors with a 400 status
     }
   },
 
@@ -253,8 +274,6 @@ const controllers = {
     } catch (error) {
       res.status(400).json({ msg: "Error sign user up.", error: error }); // Handle errors with a 400 status
     }
-
-
   },
 
   // Handle user logout

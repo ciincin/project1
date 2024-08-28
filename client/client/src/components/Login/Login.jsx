@@ -3,11 +3,14 @@ import Form from "react-bootstrap/Form";
 import "./Login.css";
 import { useState } from "react";
 import Alert from "react-bootstrap/Alert";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const navigate = useNavigate();
 
   function handleSetEmail(event) {
     setEmail(event.target.value);
@@ -17,34 +20,45 @@ function Login() {
     setPassword(event.target.value);
   }
 
-  async function handleSubmit(event) {
+  async function handleLogin(event) {
     event.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:3000/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
+      const response = await axios.post("http://localhost:3000/login", {
+        email,
+        password,
       });
 
-      const data = await response.json();
+      if(response && response.data){
 
-      if (response.ok) {
-        setMessage("Login successful");
+        const { token, id, email, username, firstname, lastname, image } = response.data;
+
+        // Save token and user info in localStorage or global context
+
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify({ id, email, username, firstname, lastname, image }));
+
+        console.log(id, email, username);
+        // Go to profile web
+
+      navigate("/profile");
+
       } else {
-        setMessage(`Login failled: ${data.msg}`);
+        setErrorMessage("login failed: data no received")
       }
+
+
+
     } catch (error) {
-      console.error("Error:", error);
-      setMessage("An error occurred. Please, try again.");
+      setErrorMessage(
+       error.response.data.msg
+      );
     }
   }
 
   return (
     <div>
-      <Form className="form-wrapper" onSubmit={handleSubmit}>
+      <Form className="form-wrapper" onSubmit={handleLogin}>
         <Form.Group className="mb-3" controlId="formBasicEmail">
           <Form.Label>Email address</Form.Label>
           <Form.Control
@@ -79,7 +93,9 @@ function Login() {
           Are you not registered? <a href="/signup">Register now</a>
         </div>
       </Form>
-      {message && <Alert variant="danger">{message}</Alert>}
+      {errorMessage && (
+        <Alert variant="danger">{errorMessage}</Alert>
+      )}
     </div>
   );
 }

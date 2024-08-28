@@ -12,7 +12,7 @@ function SignUp() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [img, setImg] = useState("");
+  const [image, setimage] = useState("");
   const [terms, setTerms] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -36,8 +36,8 @@ function SignUp() {
     setPassword(event.target.value);
   }
 
-  function handleSetImg(event) {
-    setImg(event.target.value);
+  function handleSetimage(event) {
+    setimage(event.target.value);
   }
   function handleSetTerms(event) {
     setTerms(event.target.checked);
@@ -58,7 +58,7 @@ function SignUp() {
           username,
           email,
           password,
-          img,
+          image,
         }),
       });
 
@@ -162,8 +162,8 @@ function SignUp() {
             <Form.Control
               type="file"
               name="file"
-              value={img}
-              onChange={handleSetImg}
+              value={image}
+              onChange={handleSetimage}
             />
           </Form.Group>
           <Form.Group className="position-relative mb-3">
