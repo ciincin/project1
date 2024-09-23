@@ -24,35 +24,25 @@ function Login() {
     event.preventDefault();
 
     try {
-      const response = await axios.post("http://localhost:3000/login", {
-        email,
-        password,
-      });
-
-      if(response && response.data){
-
-        const { token, id, email, username, firstname, lastname, image } = response.data;
-
-        // Save token and user info in localStorage or global context
-
-        localStorage.setItem("token", token);
-        localStorage.setItem("user", JSON.stringify({ id, email, username, firstname, lastname, image }));
-
-        console.log(id, email, username);
-        // Go to profile web
-
-      navigate("/profile");
-
-      } else {
-        setErrorMessage("login failed: data no received")
-      }
-
-
-
-    } catch (error) {
-      setErrorMessage(
-       error.response.data.msg
+      const response = await axios.post(
+        "http://localhost:3000/login",
+        {
+          email,
+          password,
+        },
+        {
+          withCredentials: true, //allows send cookies
+        }
       );
+
+      if (response && response.data) {
+        // Go to profile web
+        navigate("/profile");
+      } else {
+        setErrorMessage("login failed: data no received");
+      }
+    } catch (error) {
+      setErrorMessage(error.response?.data?.msg || "An error occurred");
     }
   }
 
@@ -93,9 +83,7 @@ function Login() {
           Are you not registered? <a href="/signup">Register now</a>
         </div>
       </Form>
-      {errorMessage && (
-        <Alert variant="danger">{errorMessage}</Alert>
-      )}
+      {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
     </div>
   );
 }

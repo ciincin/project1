@@ -10,13 +10,7 @@ function Profile() {
 
   return (
     <div className="profile-wrapper">
-      <h2>User Profile</h2>
-      <p>Username: {user.username}</p>
-      <p>firstname: {user.firstname}</p>
-      <p>lastname: {user.lastname}</p>
-      <p>image: {user.image}</p>
-      <p>email: {user.email}</p>
-      <p>User ID: {user.id}</p>
+      <h2>Welcome back, {user.username}!</h2>
     </div>
   )
 }

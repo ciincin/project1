@@ -8,15 +8,19 @@ import Profile from "./views/Profile/Profile";
 
 function App() {
   return (
-    <BrowserRouter>
-      <NavbarComponent />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/signup" element={<Register />} />
-        <Route path="/profile" element={<Profile/>}/>
-      </Routes>
-      <Footer />
-    </BrowserRouter>
+    <div className="app-container">
+      <BrowserRouter>
+        <div className="main-content">
+          <NavbarComponent />
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/signup" element={<Register />} />
+            <Route path="/profile" element={<Profile/>}/>
+          </Routes>
+        </div>
+        <Footer />
+      </BrowserRouter>
+    </div>
   );
 }
 
