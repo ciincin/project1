@@ -187,10 +187,9 @@ const controllers = {
 
     try {
       console.log("Starting login process...");
-      const user = await db.oneOrNone(
-        `SELECT * FROM users WHERE email = $1`,
-        [email]
-      ); // Fetch the user by email
+      const user = await db.oneOrNone(`SELECT * FROM users WHERE email = $1`, [
+        email,
+      ]); // Fetch the user by email
 
       console.log("User fetched from DB:", user);
       if (user) {
@@ -209,22 +208,17 @@ const controllers = {
             image: user.image,
           }; // Create a payload for the JWT
 
-          console.log("UNO")
           const SECRET = process.env.SECRET; // Get the secret key from environment variables
-          console.log("DOS")
+
           const token = jwt.sign(payload, SECRET); // Sign the JWT with the payload and secret
-          console.log("TRES")
-          console.log(token); // Log the token (for debugging)
-          console.log("CUATRO")
 
-          const query = "UPDATE users SET token="+token+" WHERE id="+user.id;
-          console.log(query)
-
-          await db.none(`UPDATE users SET token=$2 WHERE id=$1`, [
-            user.id,
-            token,
-          ]); // Update the user's token in the database
-          console.log("CINCO");
+          // Set token as a cookie
+          res.cookie("token", token, {
+            httpOnly: true, // Cannot be accessed via JavaScript
+            secure: process.env.NODE_ENV === "production", // Use HTTPS in production
+            sameSite: "Strict", // Prevent CSRF
+            maxAge: 3600000, // 1 hour
+          });
 
           res.status(200).json({
             id: user.id,
@@ -233,10 +227,7 @@ const controllers = {
             firstname: user.firstname,
             lastname: user.lastname,
             image: user.image,
-            token,
           }); // Respond with the user ID, email, and token
-          console.log("SEIS");
-
         } else {
           res.status(400).json({ msg: "Username or password incorrect." }); // If authentication fails, respond with a 400 error
         }
@@ -244,7 +235,9 @@ const controllers = {
         res.status(400).json({ msg: "Username or password incorrect." }); // If authentication fails, respond with a 400 error
       }
     } catch (error) {
-      res.status(400).json({ msg: "Error log in user oooooooooo", error: error.message }); // Handle errors with a 400 status
+      res
+        .status(400)
+        .json({ msg: "Error log in user", error: error.message }); // Handle errors with a 400 status
     }
   },
 
