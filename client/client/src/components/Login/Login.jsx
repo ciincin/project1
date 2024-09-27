@@ -5,6 +5,7 @@ import { useState } from "react";
 import Alert from "react-bootstrap/Alert";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -46,6 +47,34 @@ function Login() {
     }
   }
 
+  async function handleGoogleLoginSuccess(credentialResponse) {
+    try {
+      const response = await axios.post(
+        "http://localhost:3000/google-login",
+        {
+          token: credentialResponse.credential,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+
+      if (response && response.data) {
+        navigate("/profile");
+      } else {
+        setErrorMessage("Google login failed:Data not received");
+      }
+    } catch (error) {
+      setErrorMessage(
+        error.response?.data?.msg || "Google login error occurred"
+      );
+    }
+  }
+
+  function handleGoogleLoginError() {
+    setErrorMessage("Google login failed");
+  }
+
   return (
     <div>
       <Form className="form-wrapper" onSubmit={handleLogin}>
@@ -83,6 +112,14 @@ function Login() {
           Are you not registered? <a href="/signup">Register now</a>
         </div>
       </Form>
+      <div className="google-login">
+        <GoogleOAuthProvider clientId="445131528162-l6a7p0s8829srhi3gc2sa5vunsm34pp7.apps.googleusercontent.com">
+          <GoogleLogin
+            onSuccess={handleGoogleLoginSuccess}
+            onError={handleGoogleLoginError}
+          />
+        </GoogleOAuthProvider>
+      </div>
       {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
     </div>
   );

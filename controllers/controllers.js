@@ -5,6 +5,9 @@ const dotenv = require("dotenv"); // for enviroment variables
 dotenv.config(); // Load environment variables from .env file
 const bcrypt = require("bcrypt"); // to hash the password before save it in db
 const saltRounds = 10; //the legth of the hash password
+const { OAuth2Client } = require('google-auth-library');
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID); 
+
 
 // Define schema for user validation using Joi for user creation
 const userSchemaCreateUser = Joi.object({
@@ -68,6 +71,8 @@ const controllers = {
   createUser: async (req, res) => {
     const { firstname, lastname, username, email, password, image } = req.body; // Get user data from request body
 
+    const hashedPassword = await bcrypt.hash(password, saltRounds)
+
     // Validate user input using Joi
     const validation = userSchemaCreateUser.validate({
       firstname,
@@ -87,7 +92,7 @@ const controllers = {
       // Insert the new user into the database
       await db.none(
         `INSERT INTO users (firstname, lastname, username, email, password, image) VALUES ($1, $2, $3, $4, $5, $6)`,
-        [firstname, lastname, username, email, password, image]
+        [firstname, lastname, username, email, hashedPassword, image]
       );
 
       const usersList = await db.many(`SELECT * FROM users ORDER BY id`); // Fetch all users after insertion
@@ -241,6 +246,85 @@ const controllers = {
     }
   },
 
+  googleLogin: async (req,res)=>{
+    const {token}= req.body;
+    try {
+      const ticket = await client.verifyIdToken({
+        idToken:token,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      })
+
+      const payload= ticket.getPayload()
+      const {firstname, lastname, username, email, image}= payload
+      
+
+      let user = await db.oneOrNone(`SELECT * FROM users WHERE email = $1`, [email]);
+
+      if (!user) {
+        // Si el usuario no existe, puedes crear uno nuevo
+        user = await db.one(
+          `INSERT INTO users (firstname, lastname, username, email, image) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+          [firstname, lastname, username, email, image]
+        );
+      }
+
+      // Generar un token JWT
+    const payloadForToken = {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      firstname: user.firstname,
+      lastname: user.lastname,
+      image: user.image,
+    };
+
+    const jwtToken = jwt.sign(payloadForToken, process.env.SECRET)
+    
+    // Configurar la cookie
+    res.cookie("token", jwtToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
+      maxAge: 3600000, // 1 hora
+    });
+
+    res.status(200).json({
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      firstname: user.firstname,
+      lastname: user.lastname,
+      image: user.image,
+    });
+
+    } catch (error) {
+      res.status(400).json({ msg: "Google login error", error: error.message });
+    }
+  },
+
+  // Handle user get info
+  getMyInfo: async(req, res)=>{
+    const token = req.cookies.token; // access to cookies
+    console.log("Token in request cookies", token);
+    
+
+    if(!token){
+      res.status(401).json({msg: "No token found"})
+      return;
+    }
+
+    try {
+      const SECRET = process.env.SECRET;
+      const decoded = jwt.verify(token, SECRET)
+
+      res.status(200).json({msg: "Token retrieved successfully", decoded})
+    } catch(error){
+      res.status(400).json({msg:"Invalid token", error:error.message})
+    }
+
+    
+  },
+
   // Handle user signup
   signUp: async (req, res) => {
     const { firstname, lastname, username, email, password } = req.body; // Get name, email, and password from request body
@@ -271,16 +355,8 @@ const controllers = {
 
   // Handle user logout
   logOut: async (req, res) => {
-    const user = req.body; // Get user data from request body
-
-    try {
-      await db.none(`UPDATE users SET token=$2 WHERE id=$1`, [user.id, null]); // Clear the user's token in the database
-      res.status(200).json({ msg: "log out success" }); // Respond with a success message
-    } catch (error) {
-      res
-        .status(400)
-        .json({ msg: "Error loging out user", error: error.message }); // Handle errors with a 400 status
-    }
+    res.clearCookie("token");
+    res.status(200).json({msg: "Logout successful"})
   },
 };
 

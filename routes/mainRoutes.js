@@ -5,6 +5,7 @@ const controllers = require("../controllers/controllers"); // Import the control
 const authorize = require("../authorize"); // Import custom authorization middleware
 const passport = require("../passport");
 
+
 //Set uo Multer storage configuration
 const storage = multer.diskStorage({
   // Specify the destination directory for uploades files
@@ -28,6 +29,8 @@ router.get("/", controllers.home);
 router.get("/users", controllers.getUsers); // Get a list of all users
 router.get("/users/:id", controllers.getUserById); // Get details of a specific user by ID
 router.post("/users", controllers.createUser); // Create a new user
+router.get("/myinfo",  controllers.getMyInfo);
+router.post("/google-login", controllers.googleLogin)
 
 router.delete("/users/:id", controllers.deleteUser); // Delete a specific user by ID
 

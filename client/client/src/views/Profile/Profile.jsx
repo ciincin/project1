@@ -1,16 +1,25 @@
+import useFetchUserInfo from "../../components/useFetchUserInfo/useFetchUserInfo"
 import "./Profile.css"
 
+
 function Profile() {
+  const {userInfo, error, loading} = useFetchUserInfo()
 
-  const user = JSON.parse(localStorage.getItem("user"))
+  if (loading){
+    return <div>Loading...</div>
+  }
 
-  if(!user){
-    return <div>No user data Found</div>
+  if (error){
+    return <div>{error}</div>
+  }
+
+  if (!userInfo){
+    return <div>No user data found</div>
   }
 
   return (
     <div className="profile-wrapper">
-      <h2>Welcome back, {user.username}!</h2>
+     {userInfo && <h2>Welcome back, {userInfo.username}!</h2>}
     </div>
   )
 }
